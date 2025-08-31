@@ -11,10 +11,10 @@ const Navigation = () => {
         <div className="glass-card rounded-2xl px-6 py-4 border-border-glass">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <div className="text-2xl font-bold">
+            <a href="/" className="text-2xl font-bold hover:opacity-80 transition-opacity duration-200">
               <span className="gradient-text">Service</span>
               <span className="text-foreground">Hub</span>
-            </div>
+            </a>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
