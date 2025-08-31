@@ -21,7 +21,7 @@ const Navigation = () => {
               <a href="#services" className="text-foreground hover:text-primary transition-colors duration-200">
                 Services
               </a>
-              <a href="#kategorien" className="text-foreground hover:text-primary transition-colors duration-200">
+              <a href="/kategorien" className="text-foreground hover:text-primary transition-colors duration-200">
                 Kategorien
               </a>
               <a href="#experten" className="text-foreground hover:text-primary transition-colors duration-200">
@@ -60,7 +60,7 @@ const Navigation = () => {
                 <a href="#services" className="text-foreground hover:text-primary transition-colors py-2">
                   Services
                 </a>
-                <a href="#kategorien" className="text-foreground hover:text-primary transition-colors py-2">
+                <a href="/kategorien" className="text-foreground hover:text-primary transition-colors py-2">
                   Kategorien
                 </a>
                 <a href="#experten" className="text-foreground hover:text-primary transition-colors py-2">
