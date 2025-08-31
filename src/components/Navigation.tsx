@@ -11,17 +11,17 @@ const Navigation = () => {
         <div className="glass-card rounded-2xl px-6 py-4 border-border-glass">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <div className="text-2xl font-bold">
+            <a href="/" className="text-2xl font-bold hover:opacity-80 transition-opacity duration-200">
               <span className="gradient-text">Service</span>
               <span className="text-foreground">Hub</span>
-            </div>
+            </a>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#services" className="text-foreground hover:text-primary transition-colors duration-200">
+              <a href="/services" className="text-foreground hover:text-primary transition-colors duration-200">
                 Services
               </a>
-              <a href="#kategorien" className="text-foreground hover:text-primary transition-colors duration-200">
+              <a href="/kategorien" className="text-foreground hover:text-primary transition-colors duration-200">
                 Kategorien
               </a>
               <a href="#experten" className="text-foreground hover:text-primary transition-colors duration-200">
@@ -57,10 +57,10 @@ const Navigation = () => {
           {isMenuOpen && (
             <div className="md:hidden mt-6 pt-6 border-t border-border-glass animate-fade-in">
               <div className="flex flex-col space-y-4">
-                <a href="#services" className="text-foreground hover:text-primary transition-colors py-2">
+                <a href="/services" className="text-foreground hover:text-primary transition-colors py-2">
                   Services
                 </a>
-                <a href="#kategorien" className="text-foreground hover:text-primary transition-colors py-2">
+                <a href="/kategorien" className="text-foreground hover:text-primary transition-colors py-2">
                   Kategorien
                 </a>
                 <a href="#experten" className="text-foreground hover:text-primary transition-colors py-2">
