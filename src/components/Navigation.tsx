@@ -18,7 +18,7 @@ const Navigation = () => {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#services" className="text-foreground hover:text-primary transition-colors duration-200">
+              <a href="/services" className="text-foreground hover:text-primary transition-colors duration-200">
                 Services
               </a>
               <a href="/kategorien" className="text-foreground hover:text-primary transition-colors duration-200">
@@ -57,7 +57,7 @@ const Navigation = () => {
           {isMenuOpen && (
             <div className="md:hidden mt-6 pt-6 border-t border-border-glass animate-fade-in">
               <div className="flex flex-col space-y-4">
-                <a href="#services" className="text-foreground hover:text-primary transition-colors py-2">
+                <a href="/services" className="text-foreground hover:text-primary transition-colors py-2">
                   Services
                 </a>
                 <a href="/kategorien" className="text-foreground hover:text-primary transition-colors py-2">

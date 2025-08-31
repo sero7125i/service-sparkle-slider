@@ -1,7 +1,9 @@
-import { Search, Filter, MapPin, Star, Clock, Euro } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Filter, MapPin, Star, Clock, Euro, Calendar, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 
 const categories = [
@@ -61,7 +63,62 @@ const categories = [
   }
 ];
 
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  location: string;
+  budget: string;
+  duration: string;
+  requirements: string;
+  createdAt: string;
+  status: string;
+}
+
 const Categories = () => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [locationFilter, setLocationFilter] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+
+  useEffect(() => {
+    // Lade Tasks aus localStorage
+    const savedTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+    setTasks(savedTasks);
+    setFilteredTasks(savedTasks);
+  }, []);
+
+  useEffect(() => {
+    // Filter Tasks basierend auf Suchkriterien
+    let filtered = tasks.filter(task => {
+      const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           task.category.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesLocation = !locationFilter || 
+                             task.location.toLowerCase().includes(locationFilter.toLowerCase());
+      
+      const matchesPrice = !maxPrice || 
+                          (task.budget && extractMaxPrice(task.budget) <= parseInt(maxPrice));
+
+      return matchesSearch && matchesLocation && matchesPrice;
+    });
+    
+    setFilteredTasks(filtered);
+  }, [tasks, searchTerm, locationFilter, maxPrice]);
+
+  const extractMaxPrice = (budget: string): number => {
+    const numbers = budget.match(/\d+/g);
+    if (!numbers) return 0;
+    return Math.max(...numbers.map(Number));
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('de-DE');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -85,6 +142,8 @@ const Categories = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input
                     placeholder="Service suchen..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 bg-background/50 border-border-glass"
                   />
                 </div>
@@ -92,6 +151,8 @@ const Categories = () => {
                   <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input
                     placeholder="Ort eingeben..."
+                    value={locationFilter}
+                    onChange={(e) => setLocationFilter(e.target.value)}
                     className="pl-10 bg-background/50 border-border-glass"
                   />
                 </div>
@@ -99,6 +160,8 @@ const Categories = () => {
                   <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input
                     placeholder="Max. Preis"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
                     className="pl-10 bg-background/50 border-border-glass"
                   />
                 </div>
@@ -112,9 +175,95 @@ const Categories = () => {
         </div>
       </section>
 
+      {/* Available Tasks Section */}
+      {filteredTasks.length > 0 && (
+        <section className="pb-20 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-foreground mb-4">
+                Verfügbare Aufgaben
+              </h2>
+              <p className="text-muted-foreground">
+                {filteredTasks.length} Aufgabe{filteredTasks.length !== 1 ? 'n' : ''} gefunden
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {filteredTasks.map((task) => (
+                <Card key={task.id} className="glass-card border-border-glass hover:shadow-xl transition-all duration-300">
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-foreground mb-2">
+                          {task.title}
+                        </h3>
+                        <Badge variant="secondary" className="mb-3">
+                          {task.category}
+                        </Badge>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-primary">
+                          €{task.budget || "Verhandelbar"}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {task.duration || "Flexibel"}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <p className="text-muted-foreground mb-4 line-clamp-3">
+                      {task.description}
+                    </p>
+                    
+                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
+                      {task.location && (
+                        <div className="flex items-center">
+                          <MapPin className="w-4 h-4 mr-1" />
+                          {task.location}
+                        </div>
+                      )}
+                      <div className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        {formatDate(task.createdAt)}
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="w-4 h-4 mr-1" />
+                        {task.status === "open" ? "Offen" : "Geschlossen"}
+                      </div>
+                    </div>
+                    
+                    {task.requirements && (
+                      <div className="mb-4">
+                        <h4 className="font-medium text-foreground mb-2">Anforderungen:</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {task.requirements}
+                        </p>
+                      </div>
+                    )}
+                    
+                    <Button className="w-full bg-gradient-primary text-primary-foreground hover:shadow-lg transition-all duration-300">
+                      <User className="w-4 h-4 mr-2" />
+                      Angebot abgeben
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Categories Grid */}
       <section className="pb-20 px-4">
         <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              Service Kategorien
+            </h2>
+            <p className="text-muted-foreground">
+              Entdecken Sie alle verfügbaren Service-Kategorien
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {categories.map((category, index) => (
               <Card key={category.id} className="glass-card border-border-glass hover:shadow-xl transition-all duration-300 hover:scale-105 group">
