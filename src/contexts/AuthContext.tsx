@@ -8,6 +8,17 @@ interface User {
   description: string;
   profileImage?: string;
   createdAt: Date;
+  links?: {
+    website?: string;
+    linkedin?: string;
+    github?: string;
+    twitter?: string;
+  };
+  stats?: {
+    profileViews: number;
+    joinedDays: number;
+    completedProjects: number;
+  };
 }
 
 interface AuthContextType {
@@ -61,7 +72,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newUser: User = {
       ...userData,
       id: Date.now().toString(),
-      createdAt: new Date()
+      createdAt: new Date(),
+      links: {
+        website: '',
+        linkedin: '',
+        github: '',
+        twitter: ''
+      },
+      stats: {
+        profileViews: 0,
+        joinedDays: 0,
+        completedProjects: 0
+      }
     };
 
     users.push(newUser);
