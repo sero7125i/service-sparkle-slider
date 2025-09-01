@@ -1,9 +1,28 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Menu, X, User, Settings, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  const handleProfileClick = () => {
+    navigate('/profile');
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 px-4 py-4">
@@ -34,12 +53,46 @@ const Navigation = () => {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center space-x-4">
-              <Button variant="ghost" className="text-foreground hover:text-primary">
-                Anmelden
-              </Button>
-              <Button className="bg-gradient-primary text-primary-foreground hover:shadow-xl transition-all duration-300">
-                Registrieren
-              </Button>
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center space-x-2 h-auto p-2">
+                      <Avatar className="w-8 h-8">
+                        <AvatarFallback className="text-xs bg-gradient-primary text-primary-foreground">
+                          {getInitials(user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-foreground">{user.name}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-md border-border-glass">
+                    <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer">
+                      <User className="w-4 h-4 mr-2" />
+                      Profil anzeigen
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Abmelden
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    className="text-foreground hover:text-primary"
+                    onClick={() => navigate('/login')}
+                  >
+                    Anmelden
+                  </Button>
+                  <Button 
+                    className="bg-gradient-primary text-primary-foreground hover:shadow-xl transition-all duration-300"
+                    onClick={() => navigate('/register')}
+                  >
+                    Registrieren
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* Mobile menu button */}
@@ -70,12 +123,50 @@ const Navigation = () => {
                   Preise
                 </a>
                 <div className="flex flex-col space-y-3 pt-4 border-t border-border-glass">
-                  <Button variant="ghost" className="justify-start text-foreground hover:text-primary">
-                    Anmelden
-                  </Button>
-                  <Button className="bg-gradient-primary text-primary-foreground">
-                    Registrieren
-                  </Button>
+                  {user ? (
+                    <>
+                      <div className="flex items-center space-x-3 px-2 py-2">
+                        <Avatar className="w-8 h-8">
+                          <AvatarFallback className="text-xs bg-gradient-primary text-primary-foreground">
+                            {getInitials(user.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-foreground font-medium">{user.name}</span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start text-foreground hover:text-primary"
+                        onClick={handleProfileClick}
+                      >
+                        <User className="w-4 h-4 mr-2" />
+                        Profil anzeigen
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start text-destructive hover:text-destructive"
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Abmelden
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start text-foreground hover:text-primary"
+                        onClick={() => navigate('/login')}
+                      >
+                        Anmelden
+                      </Button>
+                      <Button 
+                        className="bg-gradient-primary text-primary-foreground"
+                        onClick={() => navigate('/register')}
+                      >
+                        Registrieren
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
