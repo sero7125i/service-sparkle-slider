@@ -1,15 +1,15 @@
 import Navigation from "@/components/Navigation";
 import HeroSection from "@/components/HeroSection";
-import CategorySlider from "@/components/CategorySlider";
 import FeaturesSection from "@/components/FeaturesSection";
+import ImpressiveStats from "@/components/ImpressiveStats";
 
 const Index = () => {
   return (
     <div className="min-h-screen">
       <Navigation />
       <HeroSection />
-      <CategorySlider />
       <FeaturesSection />
+      <ImpressiveStats />
     </div>
   );
 };
