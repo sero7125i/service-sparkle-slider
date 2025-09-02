@@ -46,8 +46,8 @@ const Navigation = () => {
               <a href="#experten" className="text-foreground hover:text-primary transition-colors duration-200">
                 Experten
               </a>
-              <a href="#preise" className="text-foreground hover:text-primary transition-colors duration-200">
-                Preise
+              <a href="/paypal" className="text-foreground hover:text-primary transition-colors duration-200">
+                PayPal
               </a>
             </div>
 
@@ -119,8 +119,8 @@ const Navigation = () => {
                 <a href="#experten" className="text-foreground hover:text-primary transition-colors py-2">
                   Experten
                 </a>
-                <a href="#preise" className="text-foreground hover:text-primary transition-colors py-2">
-                  Preise
+                <a href="/paypal" className="text-foreground hover:text-primary transition-colors py-2">
+                  PayPal
                 </a>
                 <div className="flex flex-col space-y-3 pt-4 border-t border-border-glass">
                   {user ? (
