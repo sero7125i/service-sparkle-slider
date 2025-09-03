@@ -6,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CheckCircle, XCircle, Clock, User, Euro, Mail, Calendar } from "lucide-react";
 import Navigation from "@/components/Navigation";
-import ImpressumButton from "@/components/ImpressumButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -311,8 +310,6 @@ const Expert = () => {
           </Tabs>
         </div>
       </section>
-      
-      <ImpressumButton />
     </div>
   );
 };
