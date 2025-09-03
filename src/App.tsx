@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Categories from "./pages/Categories";
 import Services from "./pages/Services";
 import PayPal from "./pages/PayPal";
+import Expert from "./pages/Expert";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/services" element={<Services />} />
             <Route path="/kategorien" element={<Categories />} />
             <Route path="/paypal" element={<PayPal />} />
+            <Route path="/experten" element={<Expert />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/profile" element={<Profile />} />

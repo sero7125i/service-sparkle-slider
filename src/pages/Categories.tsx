@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
+import TaskApplicationModal from "@/components/TaskApplicationModal";
 
 const categories = [
   {
@@ -82,6 +83,8 @@ const Categories = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     // Lade Tasks aus localStorage
@@ -117,6 +120,16 @@ const Categories = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE');
+  };
+
+  const handleApplyToTask = (task: Task) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedTask(null);
+    setIsModalOpen(false);
   };
 
   return (
@@ -241,9 +254,12 @@ const Categories = () => {
                       </div>
                     )}
                     
-                    <Button className="w-full bg-gradient-primary text-primary-foreground hover:shadow-lg transition-all duration-300">
+                    <Button 
+                      onClick={() => handleApplyToTask(task)}
+                      className="w-full bg-gradient-primary text-primary-foreground hover:shadow-lg transition-all duration-300"
+                    >
                       <User className="w-4 h-4 mr-2" />
-                      Angebot abgeben
+                      Bewerben
                     </Button>
                   </div>
                 </Card>
@@ -330,6 +346,13 @@ const Categories = () => {
           </div>
         </div>
       </section>
+
+      {/* Task Application Modal */}
+      <TaskApplicationModal 
+        task={selectedTask}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };
