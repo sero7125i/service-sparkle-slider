@@ -1,7 +1,7 @@
 import Navigation from "@/components/Navigation";
 import HeroSection from "@/components/HeroSection";
 import FeaturesSection from "@/components/FeaturesSection";
-import VisualShowcase from "@/components/VisualShowcase";
+import ImpressiveStats from "@/components/ImpressiveStats";
 
 const Index = () => {
   return (
@@ -9,7 +9,7 @@ const Index = () => {
       <Navigation />
       <HeroSection />
       <FeaturesSection />
-      <VisualShowcase />
+      <ImpressiveStats />
     </div>
   );
 };
