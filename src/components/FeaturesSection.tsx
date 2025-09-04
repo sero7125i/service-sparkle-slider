@@ -1,63 +1,55 @@
-import { Shield, Zap, Star, Users } from "lucide-react";
+import { Shield, Zap, Star, Users, Heart, Sparkles } from "lucide-react";
 
 const features = [
   {
     icon: Shield,
-    title: "100% Sicher",
-    description: "Alle Zahlungen sind durch modernste Verschlüsselung geschützt"
+    title: "Sicher & Vertrauensvoll",
+    emoji: "🛡️"
   },
   {
     icon: Zap,
-    title: "Blitzschnell",
-    description: "Projekte starten in unter 24 Stunden mit sofortiger Kommunikation"
+    title: "Schnell & Effizient", 
+    emoji: "⚡"
   },
   {
     icon: Star,
-    title: "Top Qualität",
-    description: "Nur verifizierte Experten mit nachgewiesener Exzellenz"
+    title: "Erstklassige Qualität",
+    emoji: "⭐"
   },
   {
-    icon: Users,
-    title: "24/7 Support",
-    description: "Unser Team steht Ihnen rund um die Uhr zur Verfügung"
+    icon: Heart,
+    title: "Persönlicher Support",
+    emoji: "💝"
   }
 ];
 
 const FeaturesSection = () => {
   return (
-    <section className="py-20 px-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Section header */}
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            <span className="text-foreground">Warum</span>{" "}
-            <span className="gradient-text">ServiceHub</span>
-            <span className="text-foreground">?</span>
+    <section className="py-16 px-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Simple header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <span className="text-foreground">Einfach</span>{" "}
+            <span className="gradient-text">Besser</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Die moderne Plattform für erstklassige Dienstleistungen
-          </p>
         </div>
 
-        {/* Features grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {/* Visual features grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, index) => {
-            const Icon = feature.icon;
             return (
               <div
                 key={index}
-                className="glass-card rounded-3xl p-8 text-center hover-glow animate-fade-in-up"
+                className="glass-card rounded-2xl p-6 text-center hover-glow animate-fade-in group hover:scale-105 transition-all duration-300"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <div className="w-16 h-16 mx-auto mb-6 bg-gradient-primary rounded-2xl flex items-center justify-center">
-                  <Icon className="w-8 h-8 text-primary-foreground" />
+                <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                  {feature.emoji}
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-4">
+                <h3 className="text-lg font-semibold text-foreground">
                   {feature.title}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  {feature.description}
-                </p>
               </div>
             );
           })}
