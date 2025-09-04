@@ -1,54 +1,58 @@
-import { Shield, Zap, Star } from "lucide-react";
+import { Shield, Zap, Star, Users, Heart, Sparkles } from "lucide-react";
 
 const features = [
   {
+    icon: Shield,
     title: "Sicher & Vertrauensvoll",
-    icon: Shield
+    emoji: "🛡️"
   },
   {
+    icon: Zap,
     title: "Schnell & Effizient", 
-    icon: Zap
+    emoji: "⚡"
   },
   {
+    icon: Star,
     title: "Erstklassige Qualität",
-    icon: Star
+    emoji: "⭐"
+  },
+  {
+    icon: Heart,
+    title: "Persönlicher Support",
+    emoji: "💝"
   }
 ];
 
 const FeaturesSection = () => {
   return (
     <section className="py-16 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Clean header */}
+      <div className="max-w-6xl mx-auto">
+        {/* Simple header */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold">
-            <span className="text-foreground">Warum</span>{" "}
-            <span className="gradient-text">ServiceHub</span>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <span className="text-foreground">Einfach</span>{" "}
+            <span className="gradient-text">Besser</span>
           </h2>
         </div>
 
-        {/* Minimal features */}
-        <div className="flex justify-center">
-          <div className="glass-card rounded-2xl p-8">
-            <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
-              {features.map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 text-center md:text-left"
-                  >
-                    <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="font-medium text-foreground">
-                      {feature.title}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+        {/* Visual features grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {features.map((feature, index) => {
+            return (
+              <div
+                key={index}
+                className="glass-card rounded-2xl p-6 text-center hover-glow animate-fade-in group hover:scale-105 transition-all duration-300"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                  {feature.emoji}
+                </div>
+                <h3 className="text-lg font-semibold text-foreground">
+                  {feature.title}
+                </h3>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
