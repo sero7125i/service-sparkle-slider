@@ -269,58 +269,6 @@ const Categories = () => {
         </section>
       )}
 
-      {/* Categories Grid */}
-      <section className="pb-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              Service Kategorien
-            </h2>
-            <p className="text-muted-foreground">
-              Entdecken Sie alle verfügbaren Service-Kategorien
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {categories.map((category, index) => (
-              <Card key={category.id} className="glass-card border-border-glass hover:shadow-xl transition-all duration-300 hover:scale-105 group">
-                <div className="p-8">
-                  <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                    {category.icon}
-                  </div>
-                  <h3 className="text-2xl font-bold text-foreground mb-2">
-                    {category.name}
-                  </h3>
-                  <p className="text-muted-foreground mb-6">
-                    {category.description}
-                  </p>
-                  
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Verfügbare Jobs:</span>
-                      <span className="font-semibold text-foreground">{category.jobCount}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Durchschnittspreis:</span>
-                      <span className="font-semibold text-primary">€{category.avgPrice}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Bewertung:</span>
-                      <div className="flex items-center">
-                        <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                        <span className="font-semibold text-foreground">{category.rating}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <Button className="w-full bg-gradient-primary text-primary-foreground hover:shadow-lg transition-all duration-300">
-                    Kategorie erkunden
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Stats Section */}
       <section className="py-20 px-4">

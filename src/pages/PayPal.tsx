@@ -332,9 +332,6 @@ const PayPal = () => {
                 Verwalten Sie Zahlungen für erledigte Aufgaben
               </CardDescription>
             </div>
-            <Button onClick={addSamplePayment} variant="outline" size="sm">
-              Demo Zahlung hinzufügen
-            </Button>
           </CardHeader>
           <CardContent>
             {pendingPayments.length === 0 ? (

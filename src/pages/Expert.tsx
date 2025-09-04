@@ -103,7 +103,10 @@ const Expert = () => {
             <p className="text-muted-foreground mb-8">
               Sie müssen sich anmelden, um auf den Experten-Bereich zuzugreifen.
             </p>
-            <Button className="bg-gradient-primary text-primary-foreground">
+            <Button 
+              className="bg-gradient-primary text-primary-foreground"
+              onClick={() => window.location.href = '/login'}
+            >
               Zur Anmeldung
             </Button>
           </div>

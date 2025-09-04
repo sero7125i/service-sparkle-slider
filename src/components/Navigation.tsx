@@ -53,6 +53,14 @@ const Navigation = () => {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center space-x-4">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="bg-gradient-to-r from-pink-500/10 to-purple-500/10 border-pink-500/20 text-pink-600 hover:bg-pink-500/20"
+                onClick={() => window.open('https://paypal.me', '_blank')}
+              >
+                💝 Spenden
+              </Button>
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -122,6 +130,14 @@ const Navigation = () => {
                 <a href="/paypal" className="text-foreground hover:text-primary transition-colors py-2">
                   PayPal
                 </a>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-gradient-to-r from-pink-500/10 to-purple-500/10 border-pink-500/20 text-pink-600 hover:bg-pink-500/20 justify-start"
+                  onClick={() => window.open('https://paypal.me', '_blank')}
+                >
+                  💝 Spenden
+                </Button>
                 <div className="flex flex-col space-y-3 pt-4 border-t border-border-glass">
                   {user ? (
                     <>
