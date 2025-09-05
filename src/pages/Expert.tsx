@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { CheckCircle, XCircle, Clock, User, Euro, Mail, Calendar } from "lucide-react";
+import { CheckCircle, XCircle, Clock, User, Euro, Mail, Calendar, MessageCircle } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { ChatInterface } from "@/components/ChatInterface";
 
 interface Application {
   id: string;
@@ -26,6 +27,7 @@ interface Application {
 const Expert = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [completedTasks, setCompletedTasks] = useState<Application[]>([]);
+  const [activeChat, setActiveChat] = useState<Application | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -91,6 +93,14 @@ const Expert = () => {
       title: "Bewerbung abgelehnt",
       description: "Die Bewerbung wurde abgelehnt."
     });
+  };
+
+  const handleOpenChat = (application: Application) => {
+    setActiveChat(application);
+  };
+
+  const handleCloseChat = () => {
+    setActiveChat(null);
   };
 
   if (!user) {
@@ -300,10 +310,20 @@ const Expert = () => {
                           </p>
                         </div>
 
-                        <Button className="w-full bg-gradient-primary text-primary-foreground hover:shadow-lg transition-all duration-300">
-                          <Euro className="w-4 h-4 mr-2" />
-                          Mit PayPal bezahlen
-                        </Button>
+                        <div className="flex gap-3">
+                          <Button 
+                            onClick={() => handleOpenChat(task)}
+                            variant="outline"
+                            className="flex-1"
+                          >
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            Chat starten
+                          </Button>
+                          <Button className="flex-1 bg-gradient-primary text-primary-foreground hover:shadow-lg transition-all duration-300">
+                            <Euro className="w-4 h-4 mr-2" />
+                            Mit PayPal bezahlen
+                          </Button>
+                        </div>
                       </div>
                     </Card>
                   ))}
@@ -313,6 +333,15 @@ const Expert = () => {
           </Tabs>
         </div>
       </section>
+
+      {/* Chat Interface */}
+      {activeChat && (
+        <ChatInterface
+          taskTitle={activeChat.taskTitle}
+          partnerName={activeChat.applicantName}
+          onClose={handleCloseChat}
+        />
+      )}
     </div>
   );
 };
