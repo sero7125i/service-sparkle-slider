@@ -1,15 +1,13 @@
 import Navigation from "@/components/Navigation";
-import HeroSection from "@/components/HeroSection";
-import FeaturesSection from "@/components/FeaturesSection";
-import ImpressiveStats from "@/components/ImpressiveStats";
+import ModernHeroSection from "@/components/ModernHeroSection";
+import ModernFeaturesSection from "@/components/ModernFeaturesSection";
 
 const Index = () => {
   return (
     <div className="min-h-screen">
       <Navigation />
-      <HeroSection />
-      <FeaturesSection />
-      <ImpressiveStats />
+      <ModernHeroSection />
+      <ModernFeaturesSection />
     </div>
   );
 };

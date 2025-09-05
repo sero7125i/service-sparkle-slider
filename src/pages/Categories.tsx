@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, MapPin, Star, Clock, Euro, Calendar, User } from "lucide-react";
+import { Search, Filter, MapPin, Star, Clock, Euro, Calendar, User, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import TaskApplicationModal from "@/components/TaskApplicationModal";
+import TaskCreationModal from "@/components/TaskCreationModal";
 
 const categories = [
   {
@@ -75,6 +76,7 @@ interface Task {
   requirements: string;
   createdAt: string;
   status: string;
+  images?: string[];
 }
 
 const Categories = () => {
@@ -85,6 +87,7 @@ const Categories = () => {
   const [maxPrice, setMaxPrice] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
     // Lade Tasks aus localStorage
@@ -130,6 +133,13 @@ const Categories = () => {
   const handleCloseModal = () => {
     setSelectedTask(null);
     setIsModalOpen(false);
+  };
+
+  const handleTaskCreated = () => {
+    // Reload tasks from localStorage
+    const savedTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+    setTasks(savedTasks);
+    setFilteredTasks(savedTasks);
   };
 
   return (
@@ -183,6 +193,16 @@ const Categories = () => {
                   Filtern
                 </Button>
               </div>
+              
+              <div className="text-center mt-6">
+                <Button 
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="bg-gradient-secondary text-secondary-foreground hover:shadow-xl transition-all duration-300"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Neue Aufgabe erstellen
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -227,6 +247,25 @@ const Categories = () => {
                     <p className="text-muted-foreground mb-4 line-clamp-3">
                       {task.description}
                     </p>
+                    
+                    {/* Task images */}
+                    {task.images && task.images.length > 0 && (
+                      <div className="flex gap-2 mb-4 overflow-x-auto">
+                        {task.images.slice(0, 3).map((image, index) => (
+                          <img
+                            key={index}
+                            src={image}
+                            alt={`Task image ${index + 1}`}
+                            className="w-16 h-16 object-cover rounded-lg glass-card flex-shrink-0"
+                          />
+                        ))}
+                        {task.images.length > 3 && (
+                          <div className="w-16 h-16 rounded-lg glass-card flex items-center justify-center text-xs text-muted-foreground">
+                            +{task.images.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     
                     <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
                       {task.location && (
@@ -300,6 +339,13 @@ const Categories = () => {
         task={selectedTask}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+      />
+
+      {/* Task Creation Modal */}
+      <TaskCreationModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onTaskCreated={handleTaskCreated}
       />
     </div>
   );
