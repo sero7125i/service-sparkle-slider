@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { MapPin, Euro, Clock, Plus, CheckCircle } from "lucide-react";
+import { MapPin, Euro, Clock, Plus, CheckCircle, Upload, X, Image } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useToast } from "@/hooks/use-toast";
 
@@ -32,6 +32,9 @@ const Services = () => {
     requirements: ""
   });
 
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -48,6 +51,7 @@ const Services = () => {
     const newTask = {
       id: Date.now().toString(),
       ...formData,
+      images: imagePreviews, // Add image previews to task
       createdAt: new Date().toISOString(),
       status: "open"
     };
@@ -72,10 +76,44 @@ const Services = () => {
       duration: "",
       requirements: ""
     });
+
+    // Reset images
+    setImages([]);
+    setImagePreviews([]);
   };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    
+    if (images.length + files.length > 5) {
+      toast({
+        title: "Zu viele Bilder",
+        description: "Sie können maximal 5 Bilder hochladen.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newImages = [...images, ...files];
+    setImages(newImages);
+
+    // Create previews
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreviews(prev => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -210,6 +248,60 @@ const Services = () => {
                     onChange={(e) => handleInputChange("requirements", e.target.value)}
                     className="bg-background/50 border-border-glass"
                   />
+                </div>
+              </div>
+
+              {/* Image Upload Section */}
+              <div className="space-y-6">
+                <h3 className="text-xl font-semibold text-foreground flex items-center">
+                  <Image className="w-5 h-5 mr-3 text-primary" />
+                  Bilder hinzufügen
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="border-2 border-dashed border-border-glass rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+                    <input
+                      type="file"
+                      id="image-upload"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className="cursor-pointer flex flex-col items-center space-y-2"
+                    >
+                      <Upload className="w-8 h-8 text-muted-foreground" />
+                      <span className="text-muted-foreground">
+                        Klicken Sie hier um Bilder hinzuzufügen
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        Maximal 5 Bilder (PNG, JPG, JPEG)
+                      </span>
+                    </label>
+                  </div>
+
+                  {imagePreviews.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-lg border border-border-glass"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
