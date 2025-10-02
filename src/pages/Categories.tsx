@@ -309,30 +309,6 @@ const Categories = () => {
       )}
 
 
-      {/* Stats Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="glass-card rounded-2xl p-12 border-border-glass text-center">
-            <h2 className="text-3xl font-bold text-foreground mb-12">
-              Warum ServiceHub wählen?
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="space-y-4">
-                <div className="text-4xl font-bold gradient-text">1000+</div>
-                <div className="text-muted-foreground">Aktive Projekte</div>
-              </div>
-              <div className="space-y-4">
-                <div className="text-4xl font-bold gradient-text">500+</div>
-                <div className="text-muted-foreground">Verifizierte Experten</div>
-              </div>
-              <div className="space-y-4">
-                <div className="text-4xl font-bold gradient-text">4.8★</div>
-                <div className="text-muted-foreground">Durchschnittsbewertung</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Task Application Modal */}
       <TaskApplicationModal 

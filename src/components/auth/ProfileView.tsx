@@ -1,403 +1,453 @@
 import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
-import { User, Edit, Save, X, MapPin, Calendar, Globe, Linkedin, Github, Twitter, Eye, TrendingUp, Award, ExternalLink } from 'lucide-react';
+import { Pencil, Save, X, MapPin, Mail, Star, TrendingUp, Award, Clock, MessageSquare, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface Review {
+  id: string;
+  rating: number;
+  comment: string;
+  author: string;
+  date: string;
+  projectTitle: string;
+}
 
 export const ProfileView = () => {
-  const { user, updateProfile, logout } = useAuth();
+  const { user, logout, updateProfile } = useAuth();
+  const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     name: user?.name || '',
     location: user?.location || '',
-    description: user?.description || '',
-    links: {
-      website: user?.links?.website || '',
-      linkedin: user?.links?.linkedin || '',
-      github: user?.links?.github || '',
-      twitter: user?.links?.twitter || ''
-    }
+    description: user?.description || ''
+  });
+  
+  const [reviews, setReviews] = useState<Review[]>(() => {
+    const saved = localStorage.getItem(`reviews_${user?.id}`);
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [newReview, setNewReview] = useState({
+    rating: 5,
+    comment: '',
+    author: '',
+    projectTitle: ''
   });
 
-  if (!user) return null;
-
   const handleEdit = () => {
-    setEditData({
-      name: user.name,
-      location: user.location,
-      description: user.description,
-      links: {
-        website: user.links?.website || '',
-        linkedin: user.links?.linkedin || '',
-        github: user.links?.github || '',
-        twitter: user.links?.twitter || ''
-      }
-    });
     setIsEditing(true);
+    setEditData({
+      name: user?.name || '',
+      location: user?.location || '',
+      description: user?.description || ''
+    });
   };
 
   const handleSave = () => {
     updateProfile(editData);
-    setIsEditing(false);
     toast({
       title: "Profil aktualisiert",
-      description: "Ihre Änderungen wurden erfolgreich gespeichert",
+      description: "Ihre Änderungen wurden erfolgreich gespeichert."
     });
+    setIsEditing(false);
   };
 
   const handleCancel = () => {
     setEditData({
-      name: user.name,
-      location: user.location,
-      description: user.description,
-      links: {
-        website: user.links?.website || '',
-        linkedin: user.links?.linkedin || '',
-        github: user.links?.github || '',
-        twitter: user.links?.twitter || ''
-      }
+      name: user?.name || '',
+      location: user?.location || '',
+      description: user?.description || ''
     });
     setIsEditing(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
-    if (name.startsWith('links.')) {
-      const linkKey = name.split('.')[1];
-      setEditData(prev => ({
-        ...prev,
-        links: {
-          ...prev.links,
-          [linkKey]: value
-        }
-      }));
-    } else {
-      setEditData(prev => ({
-        ...prev,
-        [name]: value
-      }));
+    setEditData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const handleAddReview = () => {
+    if (!newReview.author || !newReview.comment || !newReview.projectTitle) {
+      toast({
+        title: "Fehler",
+        description: "Bitte füllen Sie alle Felder aus.",
+        variant: "destructive"
+      });
+      return;
     }
+    
+    const review: Review = {
+      id: Date.now().toString(),
+      rating: newReview.rating,
+      comment: newReview.comment,
+      author: newReview.author,
+      projectTitle: newReview.projectTitle,
+      date: new Date().toISOString()
+    };
+    
+    const updatedReviews = [...reviews, review];
+    setReviews(updatedReviews);
+    localStorage.setItem(`reviews_${user?.id}`, JSON.stringify(updatedReviews));
+    
+    setNewReview({
+      rating: 5,
+      comment: '',
+      author: '',
+      projectTitle: ''
+    });
+    
+    toast({
+      title: "Bewertung hinzugefügt",
+      description: "Die Bewertung wurde erfolgreich gespeichert."
+    });
+  };
+  
+  const handleDeleteReview = (reviewId: string) => {
+    const updatedReviews = reviews.filter(r => r.id !== reviewId);
+    setReviews(updatedReviews);
+    localStorage.setItem(`reviews_${user?.id}`, JSON.stringify(updatedReviews));
+    
+    toast({
+      title: "Bewertung gelöscht",
+      description: "Die Bewertung wurde erfolgreich entfernt."
+    });
   };
 
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
   };
 
   const getDaysJoined = () => {
-    const joinDate = new Date(user.createdAt);
+    if (!user?.createdAt) return 0;
+    const joined = new Date(user.createdAt);
     const today = new Date();
-    const diffTime = Math.abs(today.getTime() - joinDate.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffTime = Math.abs(today.getTime() - joined.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+  
+  const getAverageRating = (): number => {
+    if (reviews.length === 0) return 0;
+    const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
+    return parseFloat((sum / reviews.length).toFixed(1));
+  };
+  
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('de-DE', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
-  const renderLinkIcon = (type: string) => {
-    switch (type) {
-      case 'website': return <Globe className="w-4 h-4" />;
-      case 'linkedin': return <Linkedin className="w-4 h-4" />;
-      case 'github': return <Github className="w-4 h-4" />;
-      case 'twitter': return <Twitter className="w-4 h-4" />;
-      default: return <Globe className="w-4 h-4" />;
-    }
-  };
+  if (!user) {
+    return (
+      <Card className="max-w-4xl mx-auto p-8 text-center glass-card">
+        <p className="text-muted-foreground">Bitte melden Sie sich an, um Ihr Profil zu sehen.</p>
+      </Card>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Main Profile Card */}
-      <Card className="glass-card hover-glow">
-        <CardHeader className="text-center pb-4">
-          <div className="flex justify-center mb-6">
-            <Avatar className="w-32 h-32 ring-4 ring-primary/20">
-              <AvatarFallback className="text-3xl bg-gradient-primary text-primary-foreground">
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* Header with Avatar and Basic Info */}
+      <Card className="glass-card border-border-glass">
+        <div className="p-8">
+          <div className="flex flex-col md:flex-row gap-6 items-start">
+            <Avatar className="w-32 h-32 border-4 border-primary/20 shadow-lg">
+              <AvatarImage src={user.profileImage} />
+              <AvatarFallback className="bg-gradient-primary text-primary-foreground text-3xl">
                 {getInitials(user.name)}
               </AvatarFallback>
             </Avatar>
-          </div>
-          <CardTitle className="text-3xl gradient-text mb-2">{user.name}</CardTitle>
-          <CardDescription className="flex items-center justify-center gap-2 text-lg">
-            <MapPin className="w-5 h-5" />
-            {user.location}
-          </CardDescription>
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-2">
-            <Calendar className="w-4 h-4" />
-            Mitglied seit {getDaysJoined()} Tagen
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {isEditing ? (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-name">Name</Label>
-                  <Input
-                    id="edit-name"
-                    name="name"
-                    value={editData.name}
-                    onChange={handleChange}
-                    className="bg-background/50"
-                  />
+            
+            <div className="flex-1">
+              {isEditing ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Name</label>
+                    <Input
+                      name="name"
+                      value={editData.name}
+                      onChange={handleChange}
+                      className="bg-background/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Standort</label>
+                    <Input
+                      name="location"
+                      value={editData.location}
+                      onChange={handleChange}
+                      placeholder="z.B. Berlin, Deutschland"
+                      className="bg-background/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Über mich</label>
+                    <Textarea
+                      name="description"
+                      value={editData.description}
+                      onChange={handleChange}
+                      placeholder="Beschreiben Sie Ihre Fähigkeiten und Erfahrungen..."
+                      className="bg-background/50 min-h-[120px]"
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button onClick={handleSave} className="bg-gradient-primary">
+                      <Save className="w-4 h-4 mr-2" />
+                      Speichern
+                    </Button>
+                    <Button onClick={handleCancel} variant="outline">
+                      <X className="w-4 h-4 mr-2" />
+                      Abbrechen
+                    </Button>
+                  </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="edit-location">Standort</Label>
-                  <Input
-                    id="edit-location"
-                    name="location"
-                    value={editData.location}
-                    onChange={handleChange}
-                    className="bg-background/50"
-                  />
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-4xl font-bold text-foreground mb-2">{user.name}</h2>
+                    <div className="flex flex-wrap gap-4 text-muted-foreground">
+                      {user.location && (
+                        <div className="flex items-center">
+                          <MapPin className="w-4 h-4 mr-1" />
+                          {user.location}
+                        </div>
+                      )}
+                      <div className="flex items-center">
+                        <Mail className="w-4 h-4 mr-1" />
+                        {user.email}
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="w-4 h-4 mr-1" />
+                        Dabei seit {getDaysJoined()} Tagen
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {user.description && (
+                    <p className="text-muted-foreground leading-relaxed text-lg">
+                      {user.description}
+                    </p>
+                  )}
+                  
+                  <div className="flex gap-2 pt-2">
+                    <Button onClick={handleEdit} className="bg-gradient-primary">
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Profil bearbeiten
+                    </Button>
+                    <Button onClick={logout} variant="outline">
+                      Abmelden
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Statistics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="glass-card border-border-glass p-6 text-center hover:shadow-xl transition-all duration-300">
+          <div className="flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Star className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-foreground mb-1">{getAverageRating()}</div>
+          <div className="text-sm text-muted-foreground">Durchschnittsbewertung</div>
+          <div className="flex justify-center mt-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                className={`w-4 h-4 ${
+                  star <= getAverageRating()
+                    ? 'fill-primary text-primary'
+                    : 'text-muted-foreground'
+                }`}
+              />
+            ))}
+          </div>
+        </Card>
+
+        <Card className="glass-card border-border-glass p-6 text-center hover:shadow-xl transition-all duration-300">
+          <div className="flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <MessageSquare className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-foreground mb-1">{reviews.length}</div>
+          <div className="text-sm text-muted-foreground">Bewertungen</div>
+        </Card>
+
+        <Card className="glass-card border-border-glass p-6 text-center hover:shadow-xl transition-all duration-300">
+          <div className="flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Award className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-foreground mb-1">{user.stats?.completedProjects || 0}</div>
+          <div className="text-sm text-muted-foreground">Abgeschlossene Projekte</div>
+        </Card>
+
+        <Card className="glass-card border-border-glass p-6 text-center hover:shadow-xl transition-all duration-300">
+          <div className="flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-foreground mb-1">{user.stats?.profileViews || 0}</div>
+          <div className="text-sm text-muted-foreground">Profilaufrufe</div>
+        </Card>
+      </div>
+
+      {/* Reviews Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Add Review Card */}
+        <Card className="glass-card border-border-glass">
+          <div className="p-6">
+            <h3 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
+              <Star className="w-6 h-6 text-primary" />
+              Neue Bewertung hinzufügen
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Bewertung</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setNewReview(prev => ({ ...prev, rating: star }))}
+                      className="transition-transform hover:scale-110"
+                    >
+                      <Star
+                        className={`w-8 h-8 cursor-pointer ${
+                          star <= newReview.rating
+                            ? 'fill-primary text-primary'
+                            : 'text-muted-foreground'
+                        }`}
+                      />
+                    </button>
+                  ))}
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="edit-description">Beschreibung</Label>
-                <Textarea
-                  id="edit-description"
-                  name="description"
-                  value={editData.description}
-                  onChange={handleChange}
-                  className="min-h-[100px] bg-background/50"
-                  placeholder="Erzählen Sie uns etwas über sich..."
+
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Projekt Titel</label>
+                <Input
+                  value={newReview.projectTitle}
+                  onChange={(e) => setNewReview(prev => ({ ...prev, projectTitle: e.target.value }))}
+                  placeholder="z.B. Website Entwicklung"
+                  className="bg-background/50"
                 />
               </div>
 
-              <div className="space-y-4">
-                <Label className="text-base font-semibold">Social Links</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-website" className="flex items-center gap-2">
-                      <Globe className="w-4 h-4" />
-                      Website
-                    </Label>
-                    <Input
-                      id="edit-website"
-                      name="links.website"
-                      value={editData.links.website}
-                      onChange={handleChange}
-                      placeholder="https://your-website.com"
-                      className="bg-background/50"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-linkedin" className="flex items-center gap-2">
-                      <Linkedin className="w-4 h-4" />
-                      LinkedIn
-                    </Label>
-                    <Input
-                      id="edit-linkedin"
-                      name="links.linkedin"
-                      value={editData.links.linkedin}
-                      onChange={handleChange}
-                      placeholder="https://linkedin.com/in/username"
-                      className="bg-background/50"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-github" className="flex items-center gap-2">
-                      <Github className="w-4 h-4" />
-                      GitHub
-                    </Label>
-                    <Input
-                      id="edit-github"
-                      name="links.github"
-                      value={editData.links.github}
-                      onChange={handleChange}
-                      placeholder="https://github.com/username"
-                      className="bg-background/50"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-twitter" className="flex items-center gap-2">
-                      <Twitter className="w-4 h-4" />
-                      Twitter
-                    </Label>
-                    <Input
-                      id="edit-twitter"
-                      name="links.twitter"
-                      value={editData.links.twitter}
-                      onChange={handleChange}
-                      placeholder="https://twitter.com/username"
-                      className="bg-background/50"
-                    />
-                  </div>
-                </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Autor/Kunde</label>
+                <Input
+                  value={newReview.author}
+                  onChange={(e) => setNewReview(prev => ({ ...prev, author: e.target.value }))}
+                  placeholder="Name des Auftraggebers"
+                  className="bg-background/50"
+                />
               </div>
-              
-              <div className="flex gap-3">
-                <Button onClick={handleSave} className="flex-1 bg-gradient-primary hover:opacity-90">
-                  <Save className="w-4 h-4 mr-2" />
-                  Speichern
-                </Button>
-                <Button variant="outline" onClick={handleCancel} className="flex-1">
-                  <X className="w-4 h-4 mr-2" />
-                  Abbrechen
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2 space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-muted-foreground mb-2 flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      E-Mail
-                    </h3>
-                    <p className="text-foreground">{user.email}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-muted-foreground mb-2">Beschreibung</h3>
-                    <p className="text-foreground leading-relaxed">{user.description || 'Noch keine Beschreibung hinzugefügt.'}</p>
-                  </div>
 
-                  {/* Social Links */}
-                  {user.links && Object.values(user.links).some(link => link) && (
-                    <div>
-                      <h3 className="font-semibold text-muted-foreground mb-3">Links</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {Object.entries(user.links).map(([key, value]) => 
-                          value && (
-                            <Badge key={key} variant="secondary" className="hover-glow cursor-pointer">
-                              <a 
-                                href={value} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 no-underline"
-                              >
-                                {renderLinkIcon(key)}
-                                <span className="capitalize">{key}</span>
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                            </Badge>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">Kommentar</label>
+                <Textarea
+                  value={newReview.comment}
+                  onChange={(e) => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
+                  placeholder="Beschreiben Sie die Zusammenarbeit..."
+                  className="bg-background/50 min-h-[100px]"
+                />
+              </div>
 
-                {/* Statistics Sidebar */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4" />
-                    Statistiken
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="p-3 rounded-lg bg-muted/30">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                        <Eye className="w-4 h-4" />
-                        Profilaufrufe
-                      </div>
-                      <div className="text-xl font-semibold text-primary">{user.stats?.profileViews || 0}</div>
-                    </div>
-                    
-                    <div className="p-3 rounded-lg bg-muted/30">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                        <Calendar className="w-4 h-4" />
-                        Dabei seit
-                      </div>
-                      <div className="text-xl font-semibold text-accent">{getDaysJoined()} Tagen</div>
-                    </div>
-                    
-                    <div className="p-3 rounded-lg bg-muted/30">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                        <Award className="w-4 h-4" />
-                        Projekte
-                      </div>
-                      <div className="text-xl font-semibold text-accent-glow">{user.stats?.completedProjects || 0}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <Separator className="bg-border-glass" />
-              
-              <div className="flex gap-3">
-                <Button onClick={handleEdit} variant="outline" className="flex-1 hover-glow">
-                  <Edit className="w-4 h-4 mr-2" />
-                  Profil bearbeiten
-                </Button>
-                <Button variant="destructive" onClick={logout} className="flex-1">
-                  Abmelden
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      {/* Public Profile Preview */}
-      <Card className="glass-card hover-glow">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="w-5 h-5" />
-            Öffentliche Profilvorschau
-          </CardTitle>
-          <CardDescription>
-            So sehen andere Benutzer Ihr Profil
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="p-6 bg-gradient-glass rounded-lg border border-border-glass">
-            <div className="flex items-start gap-6">
-              <Avatar className="w-16 h-16 ring-2 ring-primary/20">
-                <AvatarFallback className="bg-gradient-primary text-primary-foreground text-lg">
-                  {getInitials(user.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 space-y-3">
-                <div>
-                  <h4 className="font-semibold text-lg gradient-text">{user.name}</h4>
-                  <p className="text-muted-foreground flex items-center gap-1 mt-1">
-                    <MapPin className="w-4 h-4" />
-                    {user.location}
-                  </p>
-                </div>
-                
-                {user.description && (
-                  <p className="text-foreground leading-relaxed">{user.description}</p>
-                )}
-                
-                {user.links && Object.values(user.links).some(link => link) && (
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {Object.entries(user.links).map(([key, value]) => 
-                      value && (
-                        <Badge key={key} variant="outline" className="text-xs">
-                          {renderLinkIcon(key)}
-                          <span className="ml-1 capitalize">{key}</span>
-                        </Badge>
-                      )
-                    )}
-                  </div>
-                )}
-                
-                <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {getDaysJoined()} Tage dabei
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Eye className="w-3 h-3" />
-                    {user.stats?.profileViews || 0} Aufrufe
-                  </span>
-                </div>
-              </div>
+              <Button onClick={handleAddReview} className="w-full bg-gradient-primary">
+                <Star className="w-4 h-4 mr-2" />
+                Bewertung hinzufügen
+              </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </Card>
+
+        {/* Reviews List */}
+        <Card className="glass-card border-border-glass">
+          <div className="p-6">
+            <h3 className="text-2xl font-bold text-foreground mb-6">
+              Bewertungen ({reviews.length})
+            </h3>
+            
+            {reviews.length === 0 ? (
+              <div className="text-center py-12">
+                <MessageSquare className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <p className="text-muted-foreground">Noch keine Bewertungen vorhanden.</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Fügen Sie Ihre erste Bewertung hinzu!
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                {reviews.map((review) => (
+                  <div key={review.id} className="glass-card p-4 rounded-xl border-border-glass">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="flex">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`w-4 h-4 ${
+                                  star <= review.rating
+                                    ? 'fill-primary text-primary'
+                                    : 'text-muted-foreground'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm font-semibold text-foreground">
+                            {review.rating}.0
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-foreground">{review.projectTitle}</h4>
+                        <p className="text-sm text-muted-foreground">von {review.author}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteReview(review.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <p className="text-muted-foreground text-sm mb-2">{review.comment}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(review.date)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };
