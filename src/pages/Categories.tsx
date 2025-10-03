@@ -7,6 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import TaskApplicationModal from "@/components/TaskApplicationModal";
 import TaskCreationModal from "@/components/TaskCreationModal";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const categories = [
   {
@@ -75,13 +83,17 @@ interface Task {
   duration: string;
   requirements: string;
   createdAt: string;
+  createdBy?: string;
   status: string;
   images?: string[];
 }
 
 const Categories = () => {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+  const [myTasks, setMyTasks] = useState<Task[]>([]);
+  const [otherTasks, setOtherTasks] = useState<Task[]>([]);
+  const [tasksByCategory, setTasksByCategory] = useState<Record<string, Task[]>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -93,12 +105,44 @@ const Categories = () => {
     // Lade Tasks aus localStorage
     const savedTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
     setTasks(savedTasks);
-    setFilteredTasks(savedTasks);
-  }, []);
+    
+    // Teile Tasks in eigene und fremde auf
+    if (user) {
+      const mine = savedTasks.filter((task: Task) => task.createdBy === user.id);
+      const others = savedTasks.filter((task: Task) => task.createdBy !== user.id);
+      
+      setMyTasks(mine);
+      setOtherTasks(others);
+      
+      // Gruppiere fremde Tasks nach Kategorie
+      const grouped: Record<string, Task[]> = {};
+      others.forEach((task: Task) => {
+        if (!grouped[task.category]) {
+          grouped[task.category] = [];
+        }
+        grouped[task.category].push(task);
+      });
+      setTasksByCategory(grouped);
+    } else {
+      setMyTasks([]);
+      setOtherTasks(savedTasks);
+      
+      // Gruppiere alle Tasks nach Kategorie wenn nicht eingeloggt
+      const grouped: Record<string, Task[]> = {};
+      savedTasks.forEach((task: Task) => {
+        if (!grouped[task.category]) {
+          grouped[task.category] = [];
+        }
+        grouped[task.category].push(task);
+      });
+      setTasksByCategory(grouped);
+    }
+  }, [user]);
 
   useEffect(() => {
-    // Filter Tasks basierend auf Suchkriterien
-    let filtered = tasks.filter(task => {
+    // Filter anwenden
+    const tasksToFilter = user ? otherTasks : tasks;
+    let filtered = tasksToFilter.filter(task => {
       const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            task.category.toLowerCase().includes(searchTerm.toLowerCase());
@@ -112,8 +156,16 @@ const Categories = () => {
       return matchesSearch && matchesLocation && matchesPrice;
     });
     
-    setFilteredTasks(filtered);
-  }, [tasks, searchTerm, locationFilter, maxPrice]);
+    // Update tasksByCategory mit gefilterten Tasks
+    const grouped: Record<string, Task[]> = {};
+    filtered.forEach((task: Task) => {
+      if (!grouped[task.category]) {
+        grouped[task.category] = [];
+      }
+      grouped[task.category].push(task);
+    });
+    setTasksByCategory(grouped);
+  }, [otherTasks, tasks, searchTerm, locationFilter, maxPrice, user]);
 
   const extractMaxPrice = (budget: string): number => {
     const numbers = budget.match(/\d+/g);
@@ -139,7 +191,25 @@ const Categories = () => {
     // Reload tasks from localStorage
     const savedTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
     setTasks(savedTasks);
-    setFilteredTasks(savedTasks);
+    
+    // Re-split tasks
+    if (user) {
+      const mine = savedTasks.filter((task: Task) => task.createdBy === user.id);
+      const others = savedTasks.filter((task: Task) => task.createdBy !== user.id);
+      
+      setMyTasks(mine);
+      setOtherTasks(others);
+      
+      // Gruppiere fremde Tasks nach Kategorie
+      const grouped: Record<string, Task[]> = {};
+      others.forEach((task: Task) => {
+        if (!grouped[task.category]) {
+          grouped[task.category] = [];
+        }
+        grouped[task.category].push(task);
+      });
+      setTasksByCategory(grouped);
+    }
   };
 
   return (
@@ -208,100 +278,73 @@ const Categories = () => {
         </div>
       </section>
 
-      {/* Available Tasks Section */}
-      {filteredTasks.length > 0 && (
-        <section className="pb-20 px-4">
+      {/* My Tasks Section */}
+      {user && myTasks.length > 0 && (
+        <section className="pb-12 px-4">
           <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-12">
+            <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-foreground mb-4">
-                Verfügbare Aufgaben
+                Meine Aufgaben
               </h2>
               <p className="text-muted-foreground">
-                {filteredTasks.length} Aufgabe{filteredTasks.length !== 1 ? 'n' : ''} gefunden
+                {myTasks.length} eigene Aufgabe{myTasks.length !== 1 ? 'n' : ''}
               </p>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredTasks.map((task) => (
-                <Card key={task.id} className="glass-card border-border-glass hover:shadow-xl transition-all duration-300">
-                  <div className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-foreground mb-2">
-                          {task.title}
-                        </h3>
-                        <Badge variant="secondary" className="mb-3">
-                          {task.category}
-                        </Badge>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-primary">
-                          €{task.budget || "Verhandelbar"}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {task.duration || "Flexibel"}
-                        </div>
-                      </div>
+              {myTasks.map((task) => (
+                <TaskCard key={task.id} task={task} onApply={handleApplyToTask} formatDate={formatDate} showApplyButton={false} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Other Tasks by Category */}
+      {Object.keys(tasksByCategory).length > 0 && (
+        <section className="pb-20 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-foreground mb-4">
+                {user ? "Verfügbare Aufgaben" : "Alle Aufgaben"}
+              </h2>
+              <p className="text-muted-foreground">
+                Nach Kategorien sortiert
+              </p>
+            </div>
+
+            <div className="space-y-12">
+              {Object.entries(tasksByCategory).map(([category, categoryTasks]) => (
+                <div key={category} className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-2xl font-bold text-foreground">
+                        {category}
+                      </h3>
+                      <Badge variant="secondary">
+                        {categoryTasks.length} Aufgabe{categoryTasks.length !== 1 ? 'n' : ''}
+                      </Badge>
                     </div>
-                    
-                    <p className="text-muted-foreground mb-4 line-clamp-3">
-                      {task.description}
-                    </p>
-                    
-                    {/* Task images */}
-                    {task.images && task.images.length > 0 && (
-                      <div className="flex gap-2 mb-4 overflow-x-auto">
-                        {task.images.slice(0, 3).map((image, index) => (
-                          <img
-                            key={index}
-                            src={image}
-                            alt={`Task image ${index + 1}`}
-                            className="w-16 h-16 object-cover rounded-lg glass-card flex-shrink-0"
-                          />
-                        ))}
-                        {task.images.length > 3 && (
-                          <div className="w-16 h-16 rounded-lg glass-card flex items-center justify-center text-xs text-muted-foreground">
-                            +{task.images.length - 3}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
-                      {task.location && (
-                        <div className="flex items-center">
-                          <MapPin className="w-4 h-4 mr-1" />
-                          {task.location}
-                        </div>
-                      )}
-                      <div className="flex items-center">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        {formatDate(task.createdAt)}
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {task.status === "open" ? "Offen" : "Geschlossen"}
-                      </div>
-                    </div>
-                    
-                    {task.requirements && (
-                      <div className="mb-4">
-                        <h4 className="font-medium text-foreground mb-2">Anforderungen:</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {task.requirements}
-                        </p>
-                      </div>
-                    )}
-                    
-                    <Button 
-                      onClick={() => handleApplyToTask(task)}
-                      className="w-full bg-gradient-primary text-primary-foreground hover:shadow-lg transition-all duration-300"
-                    >
-                      <User className="w-4 h-4 mr-2" />
-                      Bewerben
-                    </Button>
                   </div>
-                </Card>
+
+                  <Carousel
+                    opts={{
+                      align: "start",
+                      loop: false,
+                    }}
+                    className="w-full"
+                  >
+                    <CarouselContent className="-ml-4">
+                      {categoryTasks.map((task) => (
+                        <CarouselItem key={task.id} className="pl-4 md:basis-1/2 lg:basis-1/2">
+                          <TaskCard task={task} onApply={handleApplyToTask} formatDate={formatDate} showApplyButton={true} />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="left-0" />
+                    <CarouselNext className="right-0" />
+                  </Carousel>
+                </div>
               ))}
             </div>
           </div>
@@ -326,5 +369,99 @@ const Categories = () => {
     </div>
   );
 };
+
+// Task Card Component
+interface TaskCardProps {
+  task: Task;
+  onApply: (task: Task) => void;
+  formatDate: (dateString: string) => string;
+  showApplyButton: boolean;
+}
+
+const TaskCard = ({ task, onApply, formatDate, showApplyButton }: TaskCardProps) => (
+  <Card className="glass-card border-border-glass hover:shadow-xl transition-all duration-300 h-full flex flex-col">
+    <div className="p-6 flex-1 flex flex-col">
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex-1">
+          <h3 className="text-xl font-bold text-foreground mb-2">
+            {task.title}
+          </h3>
+          <Badge variant="secondary" className="mb-3">
+            {task.category}
+          </Badge>
+        </div>
+        <div className="text-right">
+          <div className="text-lg font-bold text-primary">
+            €{task.budget || "Verhandelbar"}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {task.duration || "Flexibel"}
+          </div>
+        </div>
+      </div>
+      
+      <p className="text-muted-foreground mb-4 line-clamp-3">
+        {task.description}
+      </p>
+      
+      {/* Task images */}
+      {task.images && task.images.length > 0 && (
+        <div className="flex gap-2 mb-4 overflow-x-auto">
+          {task.images.slice(0, 3).map((image, index) => (
+            <img
+              key={index}
+              src={image}
+              alt={`Task image ${index + 1}`}
+              className="w-16 h-16 object-cover rounded-lg glass-card flex-shrink-0"
+            />
+          ))}
+          {task.images.length > 3 && (
+            <div className="w-16 h-16 rounded-lg glass-card flex items-center justify-center text-xs text-muted-foreground">
+              +{task.images.length - 3}
+            </div>
+          )}
+        </div>
+      )}
+      
+      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
+        {task.location && (
+          <div className="flex items-center">
+            <MapPin className="w-4 h-4 mr-1" />
+            {task.location}
+          </div>
+        )}
+        <div className="flex items-center">
+          <Calendar className="w-4 h-4 mr-1" />
+          {formatDate(task.createdAt)}
+        </div>
+        <div className="flex items-center">
+          <Clock className="w-4 h-4 mr-1" />
+          {task.status === "open" ? "Offen" : "Geschlossen"}
+        </div>
+      </div>
+      
+      {task.requirements && (
+        <div className="mb-4 flex-1">
+          <h4 className="font-medium text-foreground mb-2">Anforderungen:</h4>
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {task.requirements}
+          </p>
+        </div>
+      )}
+      
+      {showApplyButton && (
+        <div className="mt-auto pt-4">
+          <Button 
+            onClick={() => onApply(task)}
+            className="w-full bg-gradient-primary text-primary-foreground hover:shadow-lg transition-all duration-300"
+          >
+            <User className="w-4 h-4 mr-2" />
+            Bewerben
+          </Button>
+        </div>
+      )}
+    </div>
+  </Card>
+);
 
 export default Categories;

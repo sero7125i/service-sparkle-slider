@@ -150,7 +150,7 @@ const PayPal = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
       <Navigation />
       
-      <div className="container mx-auto px-4 py-20">
+      <div className="container mx-auto px-4 pt-32 pb-20">
         <div className="text-center mb-16">
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
             Zahlungen
