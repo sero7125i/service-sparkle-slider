@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, X, Plus, Euro, MapPin, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TaskCreationModalProps {
   isOpen: boolean;
@@ -81,16 +82,7 @@ const TaskCreationModal = ({ isOpen, onClose, onTaskCreated }: TaskCreationModal
     setImagePreviews(newPreviews);
   };
 
-  const handleSubmit = () => {
-    if (!user) {
-      toast({
-        title: "Anmeldung erforderlich",
-        description: "Sie müssen sich anmelden, um eine Aufgabe zu erstellen.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleSubmit = async () => {
     if (!formData.title.trim() || !formData.description.trim() || !formData.category) {
       toast({
         title: "Pflichtfelder fehlen",
@@ -100,40 +92,61 @@ const TaskCreationModal = ({ isOpen, onClose, onTaskCreated }: TaskCreationModal
       return;
     }
 
-    // Create new task
-    const newTask = {
-      id: Date.now().toString(),
-      ...formData,
-      createdBy: user.id,
-      createdAt: new Date().toISOString(),
-      status: "open",
-      images: imagePreviews // Store image URLs (in real app, upload to server)
-    };
+    try {
+      // Create new task
+      const newTask = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        location: formData.location || null,
+        budget: formData.budget || null,
+        duration: formData.duration || null,
+        requirements: formData.requirements || null,
+        created_by: user?.id || null,
+        status: "open",
+        images: imagePreviews.length > 0 ? imagePreviews : null
+      };
 
-    // Save to localStorage
-    const existingTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-    existingTasks.push(newTask);
-    localStorage.setItem("tasks", JSON.stringify(existingTasks));
+      const { error } = await supabase
+        .from('tasks')
+        .insert([newTask]);
 
-    toast({
-      title: "Aufgabe erstellt",
-      description: "Ihre Aufgabe wurde erfolgreich veröffentlicht."
-    });
+      if (error) {
+        toast({
+          title: "Fehler",
+          description: "Aufgabe konnte nicht erstellt werden.",
+          variant: "destructive"
+        });
+        return;
+      }
 
-    // Reset form and close
-    setFormData({
-      title: "",
-      description: "",
-      category: "",
-      location: "",
-      budget: "",
-      duration: "",
-      requirements: ""
-    });
-    setImages([]);
-    setImagePreviews([]);
-    onClose();
-    onTaskCreated?.();
+      toast({
+        title: "Aufgabe erstellt",
+        description: "Ihre Aufgabe wurde erfolgreich veröffentlicht."
+      });
+
+      // Reset form and close
+      setFormData({
+        title: "",
+        description: "",
+        category: "",
+        location: "",
+        budget: "",
+        duration: "",
+        requirements: ""
+      });
+      setImages([]);
+      setImagePreviews([]);
+      onClose();
+      onTaskCreated?.();
+    } catch (err) {
+      console.error("Error creating task:", err);
+      toast({
+        title: "Fehler",
+        description: "Ein unerwarteter Fehler ist aufgetreten.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

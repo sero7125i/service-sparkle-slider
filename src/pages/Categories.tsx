@@ -8,6 +8,8 @@ import Navigation from "@/components/Navigation";
 import TaskApplicationModal from "@/components/TaskApplicationModal";
 import TaskCreationModal from "@/components/TaskCreationModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Carousel,
   CarouselContent,
@@ -90,6 +92,7 @@ interface Task {
 
 const Categories = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [otherTasks, setOtherTasks] = useState<Task[]>([]);
@@ -100,44 +103,143 @@ const Categories = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Migrate localStorage tasks to database on first load
   useEffect(() => {
-    // Lade Tasks aus localStorage
-    const savedTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-    setTasks(savedTasks);
-    
-    // Teile Tasks in eigene und fremde auf
-    if (user) {
-      const mine = savedTasks.filter((task: Task) => task.createdBy === user.id);
-      const others = savedTasks.filter((task: Task) => task.createdBy !== user.id);
-      
-      setMyTasks(mine);
-      setOtherTasks(others);
-      
-      // Gruppiere fremde Tasks nach Kategorie
-      const grouped: Record<string, Task[]> = {};
-      others.forEach((task: Task) => {
-        if (!grouped[task.category]) {
-          grouped[task.category] = [];
+    const migrateLocalStorageTasks = async () => {
+      const localTasks = localStorage.getItem("tasks");
+      if (localTasks) {
+        try {
+          const tasksToMigrate = JSON.parse(localTasks);
+          if (tasksToMigrate.length > 0) {
+            const { error } = await supabase
+              .from('tasks')
+              .insert(tasksToMigrate.map((task: any) => ({
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                category: task.category,
+                location: task.location || null,
+                budget: task.budget || null,
+                duration: task.duration || null,
+                requirements: task.requirements || null,
+                created_at: task.createdAt,
+                created_by: task.createdBy || null,
+                status: task.status || 'open',
+                images: task.images || []
+              })));
+            
+            if (!error) {
+              localStorage.removeItem("tasks");
+              console.log("Tasks migrated to database");
+            }
+          }
+        } catch (err) {
+          console.error("Error migrating tasks:", err);
         }
-        grouped[task.category].push(task);
-      });
-      setTasksByCategory(grouped);
-    } else {
-      setMyTasks([]);
-      setOtherTasks(savedTasks);
-      
-      // Gruppiere alle Tasks nach Kategorie wenn nicht eingeloggt
-      const grouped: Record<string, Task[]> = {};
-      savedTasks.forEach((task: Task) => {
-        if (!grouped[task.category]) {
-          grouped[task.category] = [];
+      }
+    };
+
+    migrateLocalStorageTasks();
+  }, []);
+
+  // Load tasks from database
+  useEffect(() => {
+    const loadTasks = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          toast({
+            title: "Fehler beim Laden",
+            description: "Aufgaben konnten nicht geladen werden.",
+            variant: "destructive"
+          });
+          return;
         }
-        grouped[task.category].push(task);
-      });
-      setTasksByCategory(grouped);
-    }
-  }, [user]);
+
+        const formattedTasks: Task[] = (data || []).map((task: any) => ({
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          category: task.category,
+          location: task.location || '',
+          budget: task.budget || '',
+          duration: task.duration || '',
+          requirements: task.requirements || '',
+          createdAt: task.created_at,
+          createdBy: task.created_by,
+          status: task.status,
+          images: task.images || []
+        }));
+
+        setTasks(formattedTasks);
+
+        // Teile Tasks in eigene und fremde auf
+        if (user) {
+          const mine = formattedTasks.filter((task: Task) => task.createdBy === user.id);
+          const others = formattedTasks.filter((task: Task) => task.createdBy !== user.id);
+          
+          setMyTasks(mine);
+          setOtherTasks(others);
+          
+          // Gruppiere fremde Tasks nach Kategorie
+          const grouped: Record<string, Task[]> = {};
+          others.forEach((task: Task) => {
+            if (!grouped[task.category]) {
+              grouped[task.category] = [];
+            }
+            grouped[task.category].push(task);
+          });
+          setTasksByCategory(grouped);
+        } else {
+          setMyTasks([]);
+          setOtherTasks(formattedTasks);
+          
+          // Gruppiere alle Tasks nach Kategorie wenn nicht eingeloggt
+          const grouped: Record<string, Task[]> = {};
+          formattedTasks.forEach((task: Task) => {
+            if (!grouped[task.category]) {
+              grouped[task.category] = [];
+            }
+            grouped[task.category].push(task);
+          });
+          setTasksByCategory(grouped);
+        }
+      } catch (err) {
+        console.error("Error loading tasks:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadTasks();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('tasks-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks'
+        },
+        () => {
+          loadTasks();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, toast]);
 
   useEffect(() => {
     // Filter anwenden
@@ -187,29 +289,9 @@ const Categories = () => {
     setIsModalOpen(false);
   };
 
-  const handleTaskCreated = () => {
-    // Reload tasks from localStorage
-    const savedTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-    setTasks(savedTasks);
-    
-    // Re-split tasks
-    if (user) {
-      const mine = savedTasks.filter((task: Task) => task.createdBy === user.id);
-      const others = savedTasks.filter((task: Task) => task.createdBy !== user.id);
-      
-      setMyTasks(mine);
-      setOtherTasks(others);
-      
-      // Gruppiere fremde Tasks nach Kategorie
-      const grouped: Record<string, Task[]> = {};
-      others.forEach((task: Task) => {
-        if (!grouped[task.category]) {
-          grouped[task.category] = [];
-        }
-        grouped[task.category].push(task);
-      });
-      setTasksByCategory(grouped);
-    }
+  const handleTaskCreated = async () => {
+    // Tasks will be automatically reloaded via realtime subscription
+    // No need to manually reload
   };
 
   return (
