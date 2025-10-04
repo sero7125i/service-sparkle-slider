@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const navigate = useNavigate();
 
   const getInitials = (name: string) => {
@@ -67,10 +67,10 @@ const Navigation = () => {
                     <Button variant="ghost" className="flex items-center space-x-2 h-auto p-2">
                       <Avatar className="w-8 h-8">
                         <AvatarFallback className="text-xs bg-gradient-primary text-primary-foreground">
-                          {getInitials(user.name)}
+                          {getInitials(profile?.name || user.email || 'U')}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-foreground">{user.name}</span>
+                      <span className="text-foreground">{profile?.name || user.email}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-md border-border-glass">
@@ -144,10 +144,10 @@ const Navigation = () => {
                       <div className="flex items-center space-x-3 px-2 py-2">
                         <Avatar className="w-8 h-8">
                           <AvatarFallback className="text-xs bg-gradient-primary text-primary-foreground">
-                            {getInitials(user.name)}
+                            {getInitials(profile?.name || user.email || 'U')}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-foreground font-medium">{user.name}</span>
+                        <span className="text-foreground font-medium">{profile?.name || user.email}</span>
                       </div>
                       <Button 
                         variant="ghost" 

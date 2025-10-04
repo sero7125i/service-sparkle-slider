@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Pencil, Save, X, MapPin, Mail, Star, TrendingUp, Award, Clock, MessageSquare, Trash2 } from 'lucide-react';
+import { Pencil, Save, X, MapPin, Mail, Star, Clock, MessageSquare, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Review {
@@ -19,13 +18,13 @@ interface Review {
 }
 
 export const ProfileView = () => {
-  const { user, logout, updateProfile } = useAuth();
+  const { user, profile, logout, updateProfile } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
-    name: user?.name || '',
-    location: user?.location || '',
-    description: user?.description || ''
+    name: profile?.name || '',
+    location: profile?.location || '',
+    description: profile?.description || ''
   });
   
   const [reviews, setReviews] = useState<Review[]>(() => {
@@ -43,26 +42,34 @@ export const ProfileView = () => {
   const handleEdit = () => {
     setIsEditing(true);
     setEditData({
-      name: user?.name || '',
-      location: user?.location || '',
-      description: user?.description || ''
+      name: profile?.name || '',
+      location: profile?.location || '',
+      description: profile?.description || ''
     });
   };
 
-  const handleSave = () => {
-    updateProfile(editData);
-    toast({
-      title: "Profil aktualisiert",
-      description: "Ihre Änderungen wurden erfolgreich gespeichert."
-    });
-    setIsEditing(false);
+  const handleSave = async () => {
+    const { error } = await updateProfile(editData);
+    if (!error) {
+      toast({
+        title: "Profil aktualisiert",
+        description: "Ihre Änderungen wurden erfolgreich gespeichert."
+      });
+      setIsEditing(false);
+    } else {
+      toast({
+        title: "Fehler",
+        description: "Profil konnte nicht aktualisiert werden.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleCancel = () => {
     setEditData({
-      name: user?.name || '',
-      location: user?.location || '',
-      description: user?.description || ''
+      name: profile?.name || '',
+      location: profile?.location || '',
+      description: profile?.description || ''
     });
     setIsEditing(false);
   };
@@ -131,8 +138,8 @@ export const ProfileView = () => {
   };
 
   const getDaysJoined = () => {
-    if (!user?.createdAt) return 0;
-    const joined = new Date(user.createdAt);
+    if (!profile?.created_at) return 0;
+    const joined = new Date(profile.created_at);
     const today = new Date();
     const diffTime = Math.abs(today.getTime() - joined.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -168,9 +175,9 @@ export const ProfileView = () => {
         <div className="p-8">
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <Avatar className="w-32 h-32 border-4 border-primary/20 shadow-lg">
-              <AvatarImage src={user.profileImage} />
+              <AvatarImage src={profile?.profile_image} />
               <AvatarFallback className="bg-gradient-primary text-primary-foreground text-3xl">
-                {getInitials(user.name)}
+                {getInitials(profile?.name || user.email || 'U')}
               </AvatarFallback>
             </Avatar>
             
@@ -221,17 +228,17 @@ export const ProfileView = () => {
               ) : (
                 <div className="space-y-4">
                   <div>
-                    <h2 className="text-4xl font-bold text-foreground mb-2">{user.name}</h2>
+                    <h2 className="text-4xl font-bold text-foreground mb-2">{profile?.name || user.email}</h2>
                     <div className="flex flex-wrap gap-4 text-muted-foreground">
-                      {user.location && (
+                      {profile?.location && (
                         <div className="flex items-center">
                           <MapPin className="w-4 h-4 mr-1" />
-                          {user.location}
+                          {profile.location}
                         </div>
                       )}
                       <div className="flex items-center">
                         <Mail className="w-4 h-4 mr-1" />
-                        {user.email}
+                        {profile?.email || user.email}
                       </div>
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-1" />
@@ -240,9 +247,9 @@ export const ProfileView = () => {
                     </div>
                   </div>
                   
-                  {user.description && (
+                  {profile?.description && (
                     <p className="text-muted-foreground leading-relaxed text-lg">
-                      {user.description}
+                      {profile.description}
                     </p>
                   )}
                   
@@ -263,7 +270,7 @@ export const ProfileView = () => {
       </Card>
 
       {/* Statistics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="glass-card border-border-glass p-6 text-center hover:shadow-xl transition-all duration-300">
           <div className="flex items-center justify-center mb-3">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -299,21 +306,11 @@ export const ProfileView = () => {
         <Card className="glass-card border-border-glass p-6 text-center hover:shadow-xl transition-all duration-300">
           <div className="flex items-center justify-center mb-3">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Award className="w-6 h-6 text-primary" />
+              <Clock className="w-6 h-6 text-primary" />
             </div>
           </div>
-          <div className="text-3xl font-bold text-foreground mb-1">{user.stats?.completedProjects || 0}</div>
-          <div className="text-sm text-muted-foreground">Abgeschlossene Projekte</div>
-        </Card>
-
-        <Card className="glass-card border-border-glass p-6 text-center hover:shadow-xl transition-all duration-300">
-          <div className="flex items-center justify-center mb-3">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-primary" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold text-foreground mb-1">{user.stats?.profileViews || 0}</div>
-          <div className="text-sm text-muted-foreground">Profilaufrufe</div>
+          <div className="text-3xl font-bold text-foreground mb-1">{getDaysJoined()}</div>
+          <div className="text-sm text-muted-foreground">Tage Mitglied</div>
         </Card>
       </div>
 

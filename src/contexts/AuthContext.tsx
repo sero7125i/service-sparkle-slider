@@ -1,32 +1,27 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
-interface User {
+interface Profile {
   id: string;
-  name: string;
   email: string;
+  name: string;
   location: string;
   description: string;
-  profileImage?: string;
-  createdAt: Date;
-  links?: {
-    website?: string;
-    linkedin?: string;
-    github?: string;
-    twitter?: string;
-  };
-  stats?: {
-    profileViews: number;
-    joinedDays: number;
-    completedProjects: number;
-  };
+  profile_image?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (userData: Omit<User, 'id' | 'createdAt'>) => Promise<boolean>;
-  logout: () => void;
-  updateProfile: (updates: Partial<User>) => void;
+  user: SupabaseUser | null;
+  profile: Profile | null;
+  session: Session | null;
+  login: (email: string, password: string) => Promise<{ error: Error | null }>;
+  loginWithGoogle: () => Promise<{ error: Error | null }>;
+  register: (email: string, password: string, name: string, location: string, description: string) => Promise<{ error: Error | null }>;
+  logout: () => Promise<void>;
+  updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,82 +35,115 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          setTimeout(() => {
+            loadProfile(session.user.id);
+          }, 0);
+        } else {
+          setProfile(null);
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        loadProfile(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const foundUser = users.find((u: User) => u.email === email);
-    
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem('currentUser', JSON.stringify(foundUser));
-      return true;
+  const loadProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (data && !error) {
+      setProfile(data);
     }
-    return false;
   };
 
-  const register = async (userData: Omit<User, 'id' | 'createdAt'>): Promise<boolean> => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    
-    // Check if email already exists
-    if (users.some((u: User) => u.email === userData.email)) {
-      return false;
-    }
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error };
+  };
 
-    const newUser: User = {
-      ...userData,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      links: {
-        website: '',
-        linkedin: '',
-        github: '',
-        twitter: ''
+  const loginWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`,
       },
-      stats: {
-        profileViews: 0,
-        joinedDays: 0,
-        completedProjects: 0
-      }
-    };
-
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-    
-    setUser(newUser);
-    localStorage.setItem('currentUser', JSON.stringify(newUser));
-    return true;
+    });
+    return { error };
   };
 
-  const logout = () => {
+  const register = async (
+    email: string,
+    password: string,
+    name: string,
+    location: string,
+    description: string
+  ) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          name,
+          location,
+          description,
+        },
+      },
+    });
+    return { error };
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('currentUser');
+    setProfile(null);
+    setSession(null);
   };
 
-  const updateProfile = (updates: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-      
-      // Update in users array
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const updatedUsers = users.map((u: User) => 
-        u.id === user.id ? updatedUser : u
-      );
-      localStorage.setItem('users', JSON.stringify(updatedUsers));
+  const updateProfile = async (updates: Partial<Profile>) => {
+    if (!user) return { error: new Error('Not authenticated') };
+
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', user.id);
+
+    if (!error) {
+      await loadProfile(user.id);
     }
+
+    return { error };
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, profile, session, login, loginWithGoogle, register, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

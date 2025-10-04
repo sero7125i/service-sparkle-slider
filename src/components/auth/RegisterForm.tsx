@@ -1,32 +1,33 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { useNavigate, Link } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
-import { UserPlus } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Mail } from 'lucide-react';
 
-export const RegisterForm = () => {
+const RegisterForm = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
     location: '',
-    description: ''
+    description: '',
   });
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
   const navigate = useNavigate();
+  const { register, loginWithGoogle } = useAuth();
+  const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,9 +35,9 @@ export const RegisterForm = () => {
     
     if (formData.password !== formData.confirmPassword) {
       toast({
-        title: "Passwörter stimmen nicht überein",
-        description: "Bitte überprüfen Sie Ihre Passwort-Eingaben",
-        variant: "destructive",
+        title: 'Fehler',
+        description: 'Passwörter stimmen nicht überein.',
+        variant: 'destructive',
       });
       return;
     }
@@ -44,62 +45,99 @@ export const RegisterForm = () => {
     setIsLoading(true);
 
     try {
-      const success = await register({
-        name: formData.name,
-        email: formData.email,
-        location: formData.location,
-        description: formData.description
-      });
+      const { error } = await register(
+        formData.email,
+        formData.password,
+        formData.name,
+        formData.location,
+        formData.description
+      );
 
-      if (success) {
+      if (!error) {
         toast({
-          title: "Registrierung erfolgreich",
-          description: "Willkommen bei ServiceHub!",
+          title: 'Erfolgreich registriert',
+          description: 'Willkommen! Ihr Konto wurde erstellt.',
         });
         navigate('/');
       } else {
         toast({
-          title: "Registrierung fehlgeschlagen",
-          description: "E-Mail bereits vergeben",
-          variant: "destructive",
+          title: 'Registrierung fehlgeschlagen',
+          description: error.message,
+          variant: 'destructive',
         });
       }
     } catch (error) {
       toast({
-        title: "Fehler",
-        description: "Ein unerwarteter Fehler ist aufgetreten",
-        variant: "destructive",
+        title: 'Fehler',
+        description: 'Ein unerwarteter Fehler ist aufgetreten.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await loginWithGoogle();
+      if (error) {
+        toast({
+          title: 'Fehler',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Fehler',
+        description: 'Ein unerwarteter Fehler ist aufgetreten.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
-    <Card className="w-full max-w-md mx-auto glass-card">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl flex items-center justify-center gap-2">
-          <UserPlus className="w-6 h-6" />
-          Registrieren
-        </CardTitle>
+    <Card className="w-full max-w-md animate-fade-in">
+      <CardHeader>
+        <CardTitle>Registrieren</CardTitle>
         <CardDescription>
-          Erstellen Sie Ihr ServiceHub-Konto
+          Erstellen Sie ein neues Konto
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        <Button 
+          type="button" 
+          variant="outline" 
+          className="w-full" 
+          onClick={handleGoogleLogin}
+        >
+          <Mail className="mr-2 h-4 w-4" />
+          Mit Google registrieren
+        </Button>
+        
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Oder mit E-Mail
+            </span>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Vollständiger Name</Label>
+            <Label htmlFor="name">Name</Label>
             <Input
               id="name"
               name="name"
-              placeholder="Max Mustermann"
+              type="text"
               value={formData.name}
               onChange={handleChange}
               required
             />
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="email">E-Mail</Label>
             <Input
@@ -112,80 +150,65 @@ export const RegisterForm = () => {
               required
             />
           </div>
-          
           <div className="space-y-2">
             <Label htmlFor="password">Passwort</Label>
             <Input
               id="password"
               name="password"
               type="password"
-              placeholder="Sicheres Passwort"
               value={formData.password}
               onChange={handleChange}
               required
             />
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
             <Input
               id="confirmPassword"
               name="confirmPassword"
               type="password"
-              placeholder="Passwort wiederholen"
               value={formData.confirmPassword}
               onChange={handleChange}
               required
             />
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="location">Standort</Label>
             <Input
               id="location"
               name="location"
-              placeholder="Berlin, Deutschland"
+              type="text"
               value={formData.location}
               onChange={handleChange}
-              required
+              placeholder="z.B. Berlin, Deutschland"
             />
           </div>
-
           <div className="space-y-2">
-            <Label htmlFor="description">Beschreibung</Label>
+            <Label htmlFor="description">Über mich</Label>
             <Textarea
               id="description"
               name="description"
-              placeholder="Erzählen Sie uns etwas über sich..."
               value={formData.description}
               onChange={handleChange}
-              required
-              className="min-h-[100px]"
+              placeholder="Erzählen Sie etwas über sich..."
+              rows={3}
             />
           </div>
-
-          <Button 
-            type="submit" 
-            className="w-full bg-gradient-primary"
-            disabled={isLoading}
-          >
-            {isLoading ? "Wird registriert..." : "Registrieren"}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? 'Wird registriert...' : 'Registrieren'}
           </Button>
         </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Bereits ein Konto?{' '}
-            <Button 
-              variant="link" 
-              className="p-0 h-auto"
-              onClick={() => navigate('/login')}
-            >
-              Jetzt anmelden
-            </Button>
-          </p>
-        </div>
       </CardContent>
+      <CardFooter className="flex flex-col gap-4">
+        <p className="text-sm text-center text-muted-foreground">
+          Bereits ein Konto?{' '}
+          <Link to="/login" className="text-primary hover:underline">
+            Jetzt anmelden
+          </Link>
+        </p>
+      </CardFooter>
     </Card>
   );
 };
+
+export default RegisterForm;

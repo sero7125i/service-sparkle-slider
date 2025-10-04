@@ -30,7 +30,7 @@ interface TaskApplicationModalProps {
 const TaskApplicationModal = ({ task, isOpen, onClose }: TaskApplicationModalProps) => {
   const [applicationText, setApplicationText] = useState("");
   const [proposedPrice, setProposedPrice] = useState("");
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
 
   const formatDate = (dateString: string) => {
@@ -62,7 +62,7 @@ const TaskApplicationModal = ({ task, isOpen, onClose }: TaskApplicationModalPro
       taskId: task?.id,
       taskTitle: task?.title,
       applicantId: user.id,
-      applicantName: user.name,
+      applicantName: profile?.name || user.email,
       applicantEmail: user.email,
       applicationText,
       proposedPrice,
