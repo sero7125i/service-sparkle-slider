@@ -83,6 +83,16 @@ const TaskCreationModal = ({ isOpen, onClose, onTaskCreated }: TaskCreationModal
   };
 
   const handleSubmit = async () => {
+    // Check authentication first
+    if (!user) {
+      toast({
+        title: "Anmeldung erforderlich",
+        description: "Sie müssen angemeldet sein, um eine Aufgabe zu erstellen.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!formData.title.trim() || !formData.description.trim() || !formData.category) {
       toast({
         title: "Pflichtfelder fehlen",
@@ -102,7 +112,7 @@ const TaskCreationModal = ({ isOpen, onClose, onTaskCreated }: TaskCreationModal
         budget: formData.budget || null,
         duration: formData.duration || null,
         requirements: formData.requirements || null,
-        created_by: user?.id || null,
+        created_by: user.id,
         status: "open",
         images: imagePreviews.length > 0 ? imagePreviews : null
       };
