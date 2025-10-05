@@ -25,9 +25,9 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 px-4 py-4">
+    <nav className="fixed top-0 left-0 right-0 z-50 px-4 py-3 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="max-w-7xl mx-auto">
-        <div className="glass-card rounded-2xl px-6 py-4 border-border-glass">
+        <div className="px-6 py-3">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <a href="/" className="text-2xl font-bold hover:opacity-80 transition-opacity duration-200">
@@ -53,24 +53,16 @@ const Navigation = () => {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center space-x-4">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="bg-gradient-to-r from-pink-500/10 to-purple-500/10 border-pink-500/20 text-pink-600 hover:bg-pink-500/20"
-                onClick={() => window.open('https://paypal.me', '_blank')}
-              >
-                💝 Spenden
-              </Button>
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="flex items-center space-x-2 h-auto p-2">
                       <Avatar className="w-8 h-8">
-                        <AvatarFallback className="text-xs bg-gradient-primary text-primary-foreground">
+                        <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                           {getInitials(profile?.name || user.email || 'U')}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-foreground">{profile?.name || user.email}</span>
+                      <span className="text-foreground text-sm">{profile?.name || user.email}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-md border-border-glass">
@@ -94,7 +86,7 @@ const Navigation = () => {
                     Anmelden
                   </Button>
                   <Button 
-                    className="bg-gradient-primary text-primary-foreground hover:shadow-xl transition-all duration-300"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                     onClick={() => navigate('/register')}
                   >
                     Registrieren
@@ -130,24 +122,16 @@ const Navigation = () => {
                 <a href="/paypal" className="text-foreground hover:text-primary transition-colors py-2">
                   PayPal
                 </a>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="bg-gradient-to-r from-pink-500/10 to-purple-500/10 border-pink-500/20 text-pink-600 hover:bg-pink-500/20 justify-start"
-                  onClick={() => window.open('https://paypal.me', '_blank')}
-                >
-                  💝 Spenden
-                </Button>
                 <div className="flex flex-col space-y-3 pt-4 border-t border-border-glass">
                   {user ? (
                     <>
                       <div className="flex items-center space-x-3 px-2 py-2">
                         <Avatar className="w-8 h-8">
-                          <AvatarFallback className="text-xs bg-gradient-primary text-primary-foreground">
+                          <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                             {getInitials(profile?.name || user.email || 'U')}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-foreground font-medium">{profile?.name || user.email}</span>
+                        <span className="text-foreground text-sm font-medium">{profile?.name || user.email}</span>
                       </div>
                       <Button 
                         variant="ghost" 
@@ -176,7 +160,7 @@ const Navigation = () => {
                         Anmelden
                       </Button>
                       <Button 
-                        className="bg-gradient-primary text-primary-foreground"
+                        className="bg-primary text-primary-foreground"
                         onClick={() => navigate('/register')}
                       >
                         Registrieren
